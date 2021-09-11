@@ -1,6 +1,9 @@
-from flask import render_template, url_for, redirect, flash, session
-from flaskblog import app, conn, bcrypt
+from flask import Flask, render_template, url_for, flash, redirect, session
+from wtforms.validators import ValidationError
+from flaskblog import app, bcrypt, conn
+from flaskblog import forms
 from flaskblog.forms import RegistrationForm, LoginForm
+
 
 posts = [
     {
@@ -17,14 +20,17 @@ posts = [
     }
 ]
 
+
 @app.route("/")
 @app.route("/home")
 def home():
     return render_template('home.html', posts=posts)
 
+
 @app.route("/about")
 def about():
     return render_template('about.html', title='About')
+
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
@@ -66,7 +72,6 @@ def login():
         c = conn.cursor()
         c.execute(f"SELECT password FROM user WHERE email = '{form.email.data}'")
         password = c.fetchone()
-
         #authentication
         if password == None:
             flash('Login Unsuccessfull, Given username does not exist', 'danger')
@@ -77,7 +82,7 @@ def login():
             session.permanent = False
             session['userID'] = f"{c.fetchone()[0]}"
             session["isAuthenticated"] = True
-
+            
             flash(f'Login Successfull, Welcome   to flaskblog', 'success')
             return redirect(url_for('home'))
             
@@ -89,6 +94,8 @@ def login():
 def logout():
     session.pop("userID", None)
     session["isAuthenticated"] = False
+
+    return redirect(url_for('home'))
 
 @app.route("/account")
 def account():
