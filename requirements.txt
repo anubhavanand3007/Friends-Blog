@@ -2,3 +2,4 @@ flask
 flask-wtf
 wtforms
 sqlite3
+email-validator
