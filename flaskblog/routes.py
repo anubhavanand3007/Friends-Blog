@@ -89,3 +89,21 @@ def login():
 def logout():
     session.pop("userID", None)
     session["isAuthenticated"] = False
+
+@app.route("/account")
+def account():
+    if "isAuthenticated" in session:
+        if session["isAuthenticated"]:
+            c = conn.cursor()
+            c.execute(f"SELECT * FROM user WHERE id = '{session['userID']}'")
+            data = {
+                'userINFO': c.fetchone()
+            }
+        else:
+            flash('Please Login to access Account Page','info')
+            return redirect(url_for('login'))
+    else:
+        flash('Please Login to access Account Page','info')
+        return redirect(url_for('login'))
+
+    return render_template('account.html',title='Account',data = data)
