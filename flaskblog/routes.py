@@ -1,5 +1,6 @@
 from flask import render_template
-from flaskblog import app
+from flaskblog import app, conn
+from flaskblog.forms import RegistrationForm, LoginForm
 
 posts = [
     {
