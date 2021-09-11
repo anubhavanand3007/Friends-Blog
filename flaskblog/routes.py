@@ -66,11 +66,18 @@ def login():
         c = conn.cursor()
         c.execute(f"SELECT password FROM user WHERE email = '{form.email.data}'")
         password = c.fetchone()
-        
+
         #authentication
         if password == None:
             flash('Login Unsuccessfull, Given username does not exist', 'danger')
-        elif bcrypt.check_password_hash(password[0],form.password.data):            
+        elif bcrypt.check_password_hash(password[0],form.password.data):
+
+            #creating session storage
+            c.execute(f"SELECT id FROM user WHERE email = '{form.email.data}'")
+            session.permanent = False
+            session['userID'] = f"{c.fetchone()[0]}"
+            session["isAuthenticated"] = True
+
             flash(f'Login Successfull, Welcome   to flaskblog', 'success')
             return redirect(url_for('home'))
             
