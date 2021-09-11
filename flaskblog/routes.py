@@ -52,3 +52,28 @@ def register():
         flash(f'Account created for {form.username.data}!', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form, fielderror = fielderror)
+
+
+@app.route("/login", methods=['GET', 'POST'])
+def login():
+    #login data
+    form = LoginForm()
+    
+    #is entered value valid?
+    if form.validate_on_submit():
+
+        #cursor for database connection
+        c = conn.cursor()
+        c.execute(f"SELECT password FROM user WHERE email = '{form.email.data}'")
+        password = c.fetchone()
+        
+        #authentication
+        if password == None:
+            flash('Login Unsuccessfull, Given username does not exist', 'danger')
+        elif bcrypt.check_password_hash(password[0],form.password.data):            
+            flash(f'Login Successfull, Welcome   to flaskblog', 'success')
+            return redirect(url_for('home'))
+            
+        else:
+            flash('Login Unsuccessful. Please check username and password', 'danger')
+    return render_template('login.html', title='Login', form=form)
