@@ -3,6 +3,8 @@ from wtforms.validators import ValidationError
 from flaskblog import app, bcrypt, conn
 from flaskblog import forms
 from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
+import secrets
+import os
 
 
 posts = [
@@ -90,12 +92,23 @@ def login():
             flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
+
 @app.route("/logout", methods=['GET', 'POST'])
 def logout():
     session.pop("userID", None)
     session["isAuthenticated"] = False
 
     return redirect(url_for('home'))
+    
+
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    f_name, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+    form_picture.save(picture_path)
+
+    return picture_fn
 
 @app.route("/account", methods=['GET', 'POST'])
 def account():
@@ -119,7 +132,7 @@ def account():
    
             c.execute(f"SELECT id FROM user WHERE email = '{form.email.data}' AND email <> '{current_user['email']}'")       
             isEmail = c.fetchone()
-            c.execute(f"SELECT id FROM user WHERE username = '{form.username.data}' AND email <> '{current_user['username']}'")
+            c.execute(f"SELECT id FROM user WHERE username = '{form.username.data}' AND username <> '{current_user['username']}'")
             isUsername = c.fetchone()
 
             if isEmail:
@@ -130,8 +143,13 @@ def account():
             if form.validate_on_submit() and not isUsername and not isEmail:
                 c = conn.cursor()
 
-                c.execute(f"UPDATE user SET username = '{form.username.data}', email = '{form.email.data}' WHERE id = {int(current_user['id'])}")
-
+                if form.picture.data:
+                    picture_file = save_picture(form.picture.data)
+                    c.execute(f"UPDATE user SET image_file = '{picture_file}' WHERE id = {int(session['userID'])}")
+                if form.username.data:
+                    c.execute(f"UPDATE user SET username = '{form.username.data}' WHERE id = {int(current_user['id'])}")     
+                if form.email.data:
+                    c.execute(f"UPDATE user SET email = '{form.email.data}' WHERE id = {int(current_user['id'])}")
                 conn.commit()
                 flash(f'Account Updated for {form.username.data}!', 'success')
                 return redirect(url_for('account'))
