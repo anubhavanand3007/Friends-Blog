@@ -3,4 +3,3 @@ flask-wtf
 wtforms
 sqlite3
 email-validator
-Jinja2
