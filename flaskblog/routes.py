@@ -2,7 +2,7 @@ from flask import Flask, render_template, url_for, flash, redirect, session
 from wtforms.validators import ValidationError
 from flaskblog import app, bcrypt, conn
 from flaskblog import forms
-from flaskblog.forms import RegistrationForm, LoginForm
+from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
 
 
 posts = [
@@ -97,19 +97,45 @@ def logout():
 
     return redirect(url_for('home'))
 
-@app.route("/account")
+@app.route("/account", methods=['GET', 'POST'])
 def account():
     if "isAuthenticated" in session:
+
+        #REAL ACCOUNT PAGE
         if session["isAuthenticated"]:
+            fielderror = {}
+            form = UpdateAccountForm()
             c = conn.cursor()
             c.execute(f"SELECT * FROM user WHERE id = '{session['userID']}'")
             data = c.fetchone()
             current_user = {
+                'id': data[0],
                 'username': data[1],
                 'email':data[2],
                 'image_file': data[3]
             }
             image_file = url_for('static', filename = 'profile_pics/' + current_user['image_file'])
+            c = conn.cursor()
+   
+            c.execute(f"SELECT id FROM user WHERE email = '{form.email.data}' AND email <> '{current_user['email']}'")       
+            isEmail = c.fetchone()
+            c.execute(f"SELECT id FROM user WHERE username = '{form.username.data}' AND email <> '{current_user['username']}'")
+            isUsername = c.fetchone()
+
+            if isEmail:
+                fielderror['email'] = 'This Email is already taken.'
+            if isUsername:
+                fielderror['username'] = 'This Usernanme is already taken.'
+
+            if form.validate_on_submit() and not isUsername and not isEmail:
+                c = conn.cursor()
+
+                c.execute(f"UPDATE user SET username = '{form.username.data}', email = '{form.email.data}' WHERE id = {int(current_user['id'])}")
+
+                conn.commit()
+                flash(f'Account Updated for {form.username.data}!', 'success')
+                return redirect(url_for('account'))
+
         else:
             flash('Please Login to access Account Page','info')
             return redirect(url_for('login'))
@@ -117,4 +143,4 @@ def account():
         flash('Please Login to access Account Page','info')
         return redirect(url_for('login'))
 
-    return render_template('account.html',title='Account',current_user = current_user,image_file = image_file)
+    return render_template('account.html',title='Account',current_user = current_user,image_file = image_file, form=form, fielderror= fielderror)
