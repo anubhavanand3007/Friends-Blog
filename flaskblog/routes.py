@@ -117,4 +117,4 @@ def account():
         flash('Please Login to access Account Page','info')
         return redirect(url_for('login'))
 
-    return render_template('account.html',title='Account',data = data)
+    return render_template('account.html',title='Account',current_user = current_user,image_file = image_file)
