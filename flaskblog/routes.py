@@ -103,9 +103,13 @@ def account():
         if session["isAuthenticated"]:
             c = conn.cursor()
             c.execute(f"SELECT * FROM user WHERE id = '{session['userID']}'")
-            data = {
-                'userINFO': c.fetchone()
+            data = c.fetchone()
+            current_user = {
+                'username': data[1],
+                'email':data[2],
+                'image_file': data[3]
             }
+            image_file = url_for('static', filename = 'profile_pics/' + current_user['image_file'])
         else:
             flash('Please Login to access Account Page','info')
             return redirect(url_for('login'))
