@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, flash, redirect, session
+from flask import Flask, render_template, url_for, flash, redirect, session, abort
 from wtforms.validators import ValidationError
 from flaskblog import app, bcrypt, conn
 from flaskblog import forms
@@ -176,16 +176,18 @@ def new_post():
                 conn.commit()
                 flash('Your Post has been created!', 'success')
                 return redirect(url_for('home'))
-            return render_template('create_post.html', title = 'New Post', form = form)
         else:
             flash('Please Login again to create new post','info')
             return redirect(url_for('login'))
     else:
             flash('Please Login to create new post','info')
             return redirect(url_for('login'))
+    return render_template('create_post.html', title = 'New Post', form = form, legend = 'New Post')
+    
 
-@app.route('/post/<int:post_id>')
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def post(post_id):
+    updateable = False
     c = conn.cursor()
     c.execute(f"SELECT user.username, post.title, post.content, post.date_posted, user.image_file, post.id FROM post LEFT JOIN user ON user.id = post.user_id WHERE post.id = {post_id}")
     item = c.fetchone()
@@ -197,4 +199,57 @@ def post(post_id):
         'image_file': item[4],
         'id': item[5]
     }
-    return render_template('post.html', title=post['title'], post=post)
+    if "isAuthenticated" in session:
+        if session["isAuthenticated"]:
+            c = conn.cursor()
+            c.execute(f"SELECT user_id FROM post WHERE id = {post_id}")
+            if int(c.fetchone()[0]) == int(session['userID']):
+                updateable = True
+    return render_template('post.html', title=post['title'], post=post, updateable = updateable)
+
+@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
+def update_post(post_id):
+    if "isAuthenticated" in session:
+        if session["isAuthenticated"]:
+            c = conn.cursor()
+            c.execute(f"SELECT user_id FROM post WHERE id = {post_id}")
+            if int(c.fetchone()[0]) != int(session['userID']):
+                abort(403)
+            form = PostForm()
+            if form.validate_on_submit():
+                c = conn.cursor()
+                c.execute(f"UPDATE post SET title = '{form.title.data}', content = '{form.content.data}' WHERE id = {post_id}")
+                conn.commit()
+
+                flash('Your Post has been Updated!', 'success')
+                return redirect(url_for('post', post_id=post_id))
+        else:
+            flash('Please Login again to update post','info')
+            return redirect(url_for('login'))
+    else:
+        flash('Please Login to update post','info')
+        return redirect(url_for('login'))
+    
+    return render_template('create_post.html', title = 'New Post', form = form, legend = 'Update Post')
+
+@app.route('/post/<int:post_id>/delete', methods=['GET', 'POST'])
+def delete_post(post_id):
+    if "isAuthenticated" in session:
+        if session["isAuthenticated"]:
+            c = conn.cursor()
+            c.execute(f"SELECT user_id FROM post WHERE id = {post_id}")
+            if int(c.fetchone()[0]) != int(session['userID']):
+                abort(403)
+
+            c = conn.cursor()
+            c.execute(f"DELETE FROM post WHERE id = {post_id}")
+            conn.commit()
+
+            flash('Your Post has been Deleted!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Please Login again to delete post','info')
+            return redirect(url_for('login'))
+    else:
+        flash('Please Login to delete post','info')
+        return redirect(url_for('login'))
