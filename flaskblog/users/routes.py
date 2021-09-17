@@ -80,6 +80,7 @@ def account():
         if session["isAuthenticated"]:
             fielderror = {}
             form = UpdateAccountForm()
+            
             c = conn.cursor()
             c.execute(f"SELECT * FROM user WHERE id = '{session['userID']}'")
             data = c.fetchone()
@@ -92,6 +93,22 @@ def account():
             form.username.data = current_user['username']
             form.email.data = current_user['email']
             image_file = url_for('static', filename = 'profile_pics/' + current_user['image_file'])
+
+            c = conn.cursor()
+            c.execute(f"SELECT user.username, post.title, post.content, post.date_posted, user.image_file, post.id FROM post LEFT JOIN user ON user.id = post.user_id WHERE user.username = '{current_user['username']}'")
+
+            items = c.fetchall()
+            posts = []
+            for item in items:
+                post = {
+                    'author': item[0],
+                    'title': item[1],
+                    'content': item[2],
+                    'date_posted': item[3],
+                    'image_file': item[4],
+                    'id': item[5]
+                }
+                posts.append(post)
             c = conn.cursor()
    
             c.execute(f"SELECT id FROM user WHERE email = '{form.email.data}' AND email <> '{current_user['email']}'")       
@@ -115,8 +132,9 @@ def account():
                 if form.email.data:
                     c.execute(f"UPDATE user SET email = '{form.email.data}' WHERE id = {int(current_user['id'])}")
                 conn.commit()
-                flash(f'Account Updated for {form.username.data}!', 'success')
+                flash(f'Account Updated to {form.username.data}!', 'success')
                 return redirect(url_for('users.account'))
+            
 
         else:
             flash('Please Login to access Account Page','info')
@@ -125,4 +143,4 @@ def account():
         flash('Please Login to access Account Page','info')
         return redirect(url_for('users.login'))
 
-    return render_template('account.html',title='Account',current_user = current_user,image_file = image_file, form=form, fielderror= fielderror)
+    return render_template('account.html',title='Account',current_user = current_user,image_file = image_file, form=form, fielderror= fielderror, posts = posts)
