@@ -1,7 +1,7 @@
   
 from flask import render_template, url_for, flash, redirect, request, abort, Blueprint, session
 from flaskblog import conn
-from flaskblog.posts.forms import PostForm
+from flaskblog.posts.forms import PostForm, UpdateForm
 
 posts = Blueprint('posts',__name__)
 
@@ -55,9 +55,11 @@ def update_post(post_id):
             c.execute(f"SELECT user_id FROM post WHERE id = {post_id}")
             if int(c.fetchone()[0]) != int(session['userID']):
                 abort(403)
-            form = PostForm()
+            form = UpdateForm()
             c.execute(f"SELECT title, content FROM post WHERE id = {post_id}")
-            form.title.data, form.content.data = c.fetchone()
+            default = c.fetchone()
+            default_title = default[0]
+            default_content = default[1]
             if form.validate_on_submit():
                 c = conn.cursor()
                 c.execute(f"UPDATE post SET title = '{form.title.data}', content = '{form.content.data}' WHERE id = {post_id}")
@@ -72,7 +74,7 @@ def update_post(post_id):
         flash('Please Login to update post','info')
         return redirect(url_for('users.login'))
     
-    return render_template('create_post.html', title = 'New Post', form = form, legend = 'Update Post')
+    return render_template('create_post.html', title = 'New Post', form = form, legend = 'Update Post', default_content = default_content, default_title = default_title)
 
 @posts.route('/post/<int:post_id>/delete', methods=['GET', 'POST'])
 def delete_post(post_id):
