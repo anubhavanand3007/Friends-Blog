@@ -56,6 +56,8 @@ def update_post(post_id):
             if int(c.fetchone()[0]) != int(session['userID']):
                 abort(403)
             form = PostForm()
+            c.execute(f"SELECT title, content FROM post WHERE id = {post_id}")
+            form.title.data, form.content.data = c.fetchone()
             if form.validate_on_submit():
                 c = conn.cursor()
                 c.execute(f"UPDATE post SET title = '{form.title.data}', content = '{form.content.data}' WHERE id = {post_id}")
