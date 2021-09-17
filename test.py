@@ -9,4 +9,4 @@ c.execute(f"SELECT user_id FROM post WHERE id = 2")
 
 data = c.fetchone()[0]
 
-print(data + session['userID'])
+print(data)
