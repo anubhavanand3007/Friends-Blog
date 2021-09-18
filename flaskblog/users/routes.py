@@ -90,8 +90,6 @@ def account():
                 'email':data[2],
                 'image_file': data[3]
             }
-            form.username.data = current_user['username']
-            form.email.data = current_user['email']
             image_file = url_for('static', filename = 'profile_pics/' + current_user['image_file'])
 
             c = conn.cursor()
