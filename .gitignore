@@ -1,4 +1,5 @@
 env
+__pycache__
 flaskblog/__pycache__
 flaskblog/*/__pycache__
 site.db
