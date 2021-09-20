@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('site.db')
+conn = sqlite3.connect('site_temp.db')
 c=conn.cursor()
 
 c.execute("DROP table user")
